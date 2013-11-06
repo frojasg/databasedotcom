@@ -1186,5 +1186,35 @@ describe Databasedotcom::Client do
         }.should raise_error(Databasedotcom::SalesForceError)
       end
     end
+
+    describe "#http_put" do
+      it "put the data to the specified path" do
+        stub_request(:put, "https://na1.salesforce.com/my/path").to_return(:body => "", :status => 201)
+        @client.http_put("/my/path", "data")
+        WebMock.should have_requested(:put, "https://na1.salesforce.com/my/path").with(:data => "data")
+      end
+
+      it "puts parameters into the path" do
+        stub_request(:put, "https://na1.salesforce.com/my/path?foo=bar&bro=baz%20bap").to_return(:body => "", :status => 201)
+        @client.http_put("/my/path", "data", :foo => "bar", "bro" => "baz bap")
+        WebMock.should have_requested(:put, "https://na1.salesforce.com/my/path?foo=bar&bro=baz%20bap")
+      end
+
+      it "includes the headers in the request" do
+        stub_request(:put, "https://na1.salesforce.com/my/path").to_return(:body => "", :status => 201)
+        @client.http_put("/my/path", "data", nil, {"Something" => "Header"})
+        WebMock.should have_requested(:put, "https://na1.salesforce.com/my/path").with(:headers => {"Something" => "Header"})
+      end
+
+      it "raises SalesForceError" do
+        stub_request(:put, "https://na1.salesforce.com/my/path").to_return(:body => "", :status => 400)
+        lambda {
+          @client.http_put("/my/path", "data", nil, {"Something" => "Header"})
+        }.should raise_error(Databasedotcom::SalesForceError)
+      end
+
+      it_should_behave_like "a request that can refresh the oauth token", :put, "put", "https://na1.salesforce.com/my/path", 201
+    end
+
   end
 end
